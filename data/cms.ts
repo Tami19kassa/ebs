@@ -8,6 +8,7 @@ export interface MediaItem {
   description: string;
   type: ContentType;
   thumbnailUrl: string;
+  backdropUrl?: string; 
   videoUrl?: string;
   rating?: string;
   year?: number;

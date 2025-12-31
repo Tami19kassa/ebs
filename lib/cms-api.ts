@@ -94,6 +94,13 @@ export const cmsApi = {
     return data.map(mapSanityToNews);
   },
 
+  getContentById: async (id: string): Promise<MediaItem | null> => {
+    // Query Sanity for a movie with this specific ID
+    const query = `*[_type == "movie" && _id == $id][0]`;
+    const data = await client.fetch(query, { id }, { cache: 'no-store' });
+    return data ? mapSanityToMedia(data) : null;
+  },
+
   // 3. Search
   searchContent: async (term: string): Promise<MediaItem[]> => {
     const query = `*[_type == "movie" && title match "${term}*"]`;
