@@ -5,47 +5,62 @@ export const homePageType = defineType({
   title: 'Home Page Configuration',
   type: 'document',
   fields: [
-    defineField({
-      name: 'tickerText',
-      title: 'Breaking News Ticker (Red Bar)',
-      type: 'string',
-      description: 'Text displayed in the top red bar.'
-    }),
-    defineField({
-      name: 'heroMovie',
-      title: 'Hero Section Feature',
-      type: 'reference',
-      to: [{ type: 'movie' }],
-      description: 'Select the movie/show to display at the very top.'
-    }),
+    defineField({ name: 'tickerText', title: 'Breaking News Ticker', type: 'string' }),
+    defineField({ name: 'heroMovie', title: 'Hero Section Feature', type: 'reference', to: [{ type: 'movie' }] }),
+    
+    // SECTION 1
     defineField({
       name: 'trendingList',
-      title: 'Trending Section',
-      type: 'array',
-      of: [{ type: 'reference', to: [{ type: 'movie' }] }],
-      description: 'Manually curate the Trending list.'
-    }),
-    defineField({
-      name: 'originalsList',
-      title: 'EBS Originals Section',
+      title: '1. Trending Section',
       type: 'array',
       of: [{ type: 'reference', to: [{ type: 'movie' }] }]
     }),
+
+    // SECTION 2
+    defineField({
+      name: 'originalsList',
+      title: '2. EBS Originals Section',
+      type: 'array',
+      of: [{ type: 'reference', to: [{ type: 'movie' }] }]
+    }),
+
+    // SECTION 3 (NEW)
+    defineField({
+      name: 'newReleases',
+      title: '3. New Releases Section',
+      type: 'array',
+      of: [{ type: 'reference', to: [{ type: 'movie' }] }]
+    }),
+
+    // SECTION 4 (NEW)
+    defineField({
+      name: 'kidsFamily',
+      title: '4. Kids & Family Section',
+      type: 'array',
+      of: [{ type: 'reference', to: [{ type: 'movie' }] }]
+    }),
+
+    // SECTION 5
     defineField({
       name: 'curatedCollections',
-      title: 'Bento Grid Discovery',
+      title: '5. Bento Grid Discovery',
       type: 'array',
-      of: [{ type: 'reference', to: [{ type: 'movie' }] }],
-      validation: Rule => Rule.max(5).warning('Best visual results with 4-5 items.')
+      of: [{ type: 'reference', to: [{ type: 'movie' }] }]
     }),
+
     defineField({
         name: 'liveSection',
-        title: 'Live TV Section Info',
+        title: 'Live TV Section',
         type: 'object',
         fields: [
             defineField({ name: 'title', type: 'string' }),
             defineField({ name: 'description', type: 'string' }),
-            defineField({ name: 'coverImage', type: 'image' }),
+            defineField({ 
+              name: 'coverImage', 
+              type: 'image', 
+              title: 'Live Section Background Image', // <--- THIS CONTROLS THE IMAGE
+              options: { hotspot: true }
+            }),
         ]
     })
   ],

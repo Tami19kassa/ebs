@@ -15,6 +15,7 @@ export interface MediaItem {
   duration?: string;
   categories: string[];
   featured?: boolean;
+  slug?: { current: string };
 }
 
 export interface NewsItem {
