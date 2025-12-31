@@ -46,6 +46,8 @@ const mapSanityToNews = (doc: any): NewsItem => ({
 });
 
 // --- API METHODS ---
+// lib/cms-api.ts
+
 export const cmsApi = {
   // 1. Fetch Singleton Homepage
   getHomePageData: async (): Promise<HomePageData> => {
@@ -58,7 +60,8 @@ export const cmsApi = {
       liveSection
     }`;
 
-    const data = await client.fetch(query);
+    // FIX: Add the options object as the second argument
+    const data = await client.fetch(query, {}, { cache: 'no-store' }); 
 
     if (!data) return {
       tickerText: "Welcome to EBS Premier+",
@@ -83,19 +86,18 @@ export const cmsApi = {
     };
   },
 
-  // 2. Fetch News
+  // 2. Fetch News (Apply the fix here too)
   getNews: async (): Promise<NewsItem[]> => {
     const query = `*[_type == "news"] | order(publishedAt desc)[0...3]`;
-    const data = await client.fetch(query);
+    // FIX: Disable cache here too
+    const data = await client.fetch(query, {}, { cache: 'no-store' });
     return data.map(mapSanityToNews);
   },
 
-  // 3. Search Content (THIS WAS MISSING)
+  // 3. Search
   searchContent: async (term: string): Promise<MediaItem[]> => {
-    // GROQ query: Find movies where title matches the term (case insensitive)
-    // The asterisk (*) after the term acts as a wildcard
     const query = `*[_type == "movie" && title match "${term}*"]`;
-    const data = await client.fetch(query);
+    const data = await client.fetch(query, {}, { cache: 'no-store' });
     return data.map(mapSanityToMedia);
   }
 };
