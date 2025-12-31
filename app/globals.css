@@ -1,26 +1,57 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  /* Cinematic Color Palette */
+  --color-ebs-dark: #0F0F0F;
+  --color-ebs-charcoal: #1E1E24;
+  --color-ebs-purple: #1E002B;
+  --color-ebs-crimson: #D62C2C;
+  --color-ebs-gold: #FFD700;
+
+  /* Typography */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui;
+  --font-heading: var(--font-playfair), serif;
+
+  /* Custom Backgrounds */
+  --background-image-cinematic-fade: linear-gradient(to top, #0F0F0F 10%, transparent 90%);
+  --background-image-radial-faded: radial-gradient(circle, var(--color-ebs-purple) 0%, transparent 70%);
+
+  /* Animation Tokens (Optional - usually handled by Framer Motion in this stack, 
+     but good for standard CSS transitions) */
+  --animate-fade-in: fadeIn 0.5s ease-out;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+/* Base Styles */
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: var(--color-ebs-dark);
+    --foreground: #ffffff;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    /* Improved gradient syntax for v4 */
+    background-image: linear-gradient(
+      to bottom,
+      var(--color-ebs-dark),
+      #1e002b
+    );
+    min-height: 100vh;
+    overflow-x: hidden;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Utilities */
+@utility no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }

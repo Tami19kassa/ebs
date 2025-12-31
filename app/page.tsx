@@ -1,65 +1,114 @@
-import Image from "next/image";
+import { Suspense } from "react";
+import { HeroSection } from "@/components/hero/HeroSection";
+import { MovieCard } from "@/components/content/MovieCard";
+import { BentoGrid } from "@/components/content/BentoGrid";
+import { NewsSection } from "@/components/content/NewsSection";
+import { Footer } from "@/components/layout/Footer";
+import { Navbar } from "@/components/layout/Navbar"; // Navbar is now imported here to pass props!
+import { cmsApi } from "@/lib/cms-api";
 
-export default function Home() {
+// Helper components
+const SectionHeader = ({ title, sub }: { title: string; sub?: string }) => (
+  <div className="mb-6 px-6 md:px-12 max-w-[1400px] mx-auto">
+    <h2 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
+      <span className="w-1.5 h-8 bg-ebs-crimson rounded-full" />
+      {title}
+    </h2>
+    {sub && <p className="text-gray-400 ml-5 mt-1 text-sm">{sub}</p>}
+  </div>
+);
+
+const ScrollContainer = ({ children }: { children: React.ReactNode }) => (
+  <div className="flex gap-5 overflow-x-auto pb-8 pt-2 snap-x snap-mandatory no-scrollbar px-6 md:px-12 max-w-[1400px] mx-auto">
+    {children}
+  </div>
+);
+
+export default async function Home() {
+  // 1. Fetch The Config
+  const [homeData, newsData] = await Promise.all([
+    cmsApi.getHomePageData(),
+    cmsApi.getNews()
+  ]);
+
+  const { heroItem, trending, originals, bentoGrid, liveSection, tickerText } = homeData;
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="min-h-screen bg-ebs-dark" id="home">
+      {/* Pass dynamic ticker text to Navbar */}
+      <Navbar tickerText={tickerText} />
+      
+      {/* Safe Check: Only render Hero if Editor selected one */}
+      {heroItem ? (
+        <HeroSection featured={heroItem} />
+      ) : (
+        <div className="h-[50vh] flex items-center justify-center text-gray-500">
+          <p>Please configure a Hero Item in Sanity Studio</p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+      )}
+
+      <div className="relative z-20 space-y-24 pb-20 -mt-20">
+        
+        {/* TRENDING */}
+        {trending.length > 0 && (
+          <section id="trending">
+             <SectionHeader title="Trending Now" sub="Curated picks for this week" />
+             <ScrollContainer>
+                {trending.map((item) => (
+                  <div key={item.id} className="min-w-[280px] md:min-w-[350px] snap-start">
+                    <MovieCard data={item} />
+                  </div>
+                ))}
+             </ScrollContainer>
+          </section>
+        )}
+
+        {/* ORIGINALS */}
+        {originals.length > 0 && (
+          <section id="originals" className="bg-linear-to-b from-ebs-purple/20 to-transparent py-10">
+            <SectionHeader title="EBS Originals" sub="Exclusive stories" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-6 md:px-12 max-w-[1400px] mx-auto">
+              {originals.map(item => <MovieCard key={item.id} data={item} />)}
+            </div>
+          </section>
+        )}
+
+        {/* BENTO GRID */}
+        {bentoGrid.length > 0 && (
+          <section>
+            <SectionHeader title="Editors' Collections" />
+            <div className="px-6 md:px-12 max-w-[1400px] mx-auto">
+               <BentoGrid items={bentoGrid} />
+            </div>
+          </section>
+        )}
+
+        {/* LIVE TV SECTION (Dynamic) */}
+        <section id="live" className="relative h-[500px] w-full bg-fixed bg-center bg-cover" 
+           style={{ backgroundImage: `url('${liveSection.coverImage || "https://images.unsplash.com/photo-1598550476439-6847785fcea6?q=80"}')` }}
+        >
+            <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
+                <div className="text-center space-y-6 p-6">
+                    <span className="text-ebs-crimson font-bold tracking-[0.2em] uppercase">On Air Now</span>
+                    <h2 className="text-5xl font-heading font-bold text-white">{liveSection.title}</h2>
+                    <p className="text-gray-300 max-w-lg mx-auto">{liveSection.description}</p>
+                    <button className="bg-white text-black font-bold px-8 py-4 rounded hover:scale-105 transition-transform">
+                        WATCH LIVE
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        {/* NEWS */}
+        {newsData.length > 0 && (
+          <div id="news">
+              <NewsSection news={newsData} />
+          </div>
+        )}
+        
+      </div>
+
+      <Footer />
+    </main>
   );
 }
