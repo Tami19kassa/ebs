@@ -9,9 +9,12 @@ import { notFound } from "next/navigation";
 // Force dynamic rendering so we get fresh data
 export const dynamic = 'force-dynamic';
 
-export default async function WatchPage({ params }: { params: { id: string } }) {
-  // Fetch the specific movie using the ID from the URL
-  const movie = await cmsApi.getContentById(params.id);
+export default async function WatchPage({ params }: { params: Promise<{ id: string }> }) {
+  // FIX: In Next.js 15, we must await the params object before using it
+  const { id } = await params;
+
+  // Fetch the specific movie using the ID
+  const movie = await cmsApi.getContentById(id);
 
   // If ID is wrong or deleted, show 404
   if (!movie) {
