@@ -1,11 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
-import Image from "next/image";
 import { Play, Loader2, AlertCircle } from "lucide-react";
 import dynamic from "next/dynamic";
 
-// FIX: Switch back to standard "react-player" to resolve the module error.
-// We keep the dynamic import to ensure it only loads on the client side.
+// 1. STANDARD IMPORT with 'as any' to silence TypeScript
 const ReactPlayer = dynamic(() => import("react-player"), { 
   ssr: false,
   loading: () => (
@@ -22,27 +20,19 @@ interface UniversalPlayerProps {
 }
 
 export const UniversalPlayer = ({ url, poster, title }: UniversalPlayerProps) => {
-  // STATE MANAGEMENT
-  const [isClient, setIsClient] = useState(false); // To handle hydration
-  const [isPlaying, setIsPlaying] = useState(false); // Have we started the video?
-  const [hasError, setHasError] = useState(false); // Did the video fail?
+  const [isClient, setIsClient] = useState(false);
 
-  // HYDRATION FIX
+  // Hydration Fix
   useEffect(() => {
     setIsClient(true);
   }, []);
-
-  // EVENT HANDLER
-  const handlePlay = () => {
-    setIsPlaying(true);
-  };
 
   if (!isClient) {
     return <div className="aspect-video w-full bg-ebs-charcoal rounded-xl animate-pulse border border-white/10" />;
   }
 
-  // ERROR STATE
-  if (!url || hasError) {
+  // Error Check
+  if (!url) {
     return (
       <div className="aspect-video w-full bg-gray-900 rounded-xl flex flex-col items-center justify-center text-gray-400 border border-white/10">
         <AlertCircle className="w-10 h-10 mb-2 text-red-500" />
@@ -55,60 +45,24 @@ export const UniversalPlayer = ({ url, poster, title }: UniversalPlayerProps) =>
     <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl border border-white/10 group">
       
       {/* 
-         THE "TRUE" PLAYER
-         Only renders if isPlaying is true.
+         THE FIX: We use the library's native 'light' prop.
+         This tells ReactPlayer: "Show this image first, and when clicked, YOU handle the video loading."
+         This guarantees the video plays immediately on click.
       */}
-      {isPlaying ? (
-        <div className="absolute inset-0 z-20">
-          <ReactPlayer
-            url={url}
-            width="100%"
-            height="100%"
-            playing={true}
-            controls={true}
-            onError={(e: any) => {
-              console.error("Video Error:", e);
-              setHasError(true);
-            }}
-            config={{
-              youtube: {
-                playerVars: { 
-                  showinfo: 0, 
-                  rel: 0,
-                  modestbranding: 1,
-                  origin: typeof window !== 'undefined' ? window.location.origin : undefined
-                }
-              }
-            }}
-          />
-        </div>
-      ) : (
-        /* 
-           THE "POSTER" OVERLAY
-           High-res image with custom play button
-        */
-        <div 
-          className="absolute inset-0 z-10 cursor-pointer" 
-          onClick={handlePlay}
-        >
-          {/* Background Image */}
-          {poster ? (
-            <Image
-              src={poster}
-              alt={title || "Video thumbnail"}
-              fill
-              className="object-cover transition-transform duration-700 group-hover:scale-105"
-              priority
-            />
-          ) : (
-             <div className="w-full h-full bg-gray-800" />
-          )}
-
-          {/* Dark Overlay */}
-          <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-colors duration-300" />
-
-          {/* Centered Play Button */}
-          <div className="absolute inset-0 flex items-center justify-center">
+      <ReactPlayer
+        url={url}
+        width="100%"
+        height="100%"
+        controls={true}
+        playing={true} // This tells it to autoplay ONLY after the user clicks the thumbnail
+        
+        // 1. Pass the poster image here. 
+        // If no poster, we pass 'true' which attempts to fetch the default YouTube thumbnail.
+        light={poster ? poster : true}
+        
+        // 2. We pass your Custom Button into the player itself.
+        playIcon={
+          <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors w-full h-full">
              <div className="relative">
                 {/* Glowing Pulse Effect */}
                 <div className="absolute inset-0 bg-ebs-crimson rounded-full animate-ping opacity-20 duration-1000" />
@@ -119,8 +73,19 @@ export const UniversalPlayer = ({ url, poster, title }: UniversalPlayerProps) =>
                 </div>
              </div>
           </div>
-        </div>
-      )}
+        }
+        
+        // 3. Simple Config
+        config={{
+          youtube: {
+            playerVars: { 
+              showinfo: 0, 
+              rel: 0,
+              modestbranding: 1
+            }
+          }
+        }}
+      />
     </div>
   );
 };
