@@ -7,7 +7,6 @@ import { Footer } from "@/components/layout/Footer";
 import { Navbar } from "@/components/layout/Navbar";
 import { cmsApi } from "@/lib/cms-api";
 
-// FIX 1: Use 'flex-nowrap' and force overflow handling
 const ScrollContainer = ({ children }: { children: React.ReactNode }) => (
   <div className="flex gap-4 overflow-x-auto pb-8 pt-4 snap-x snap-mandatory no-scrollbar px-6 md:px-12 max-w-[1400px] mx-auto flex-nowrap w-full">
     {children}
@@ -46,7 +45,8 @@ export default async function Home() {
              <SectionHeader title="Trending Now" />
              <ScrollContainer>
                 {trending.map((item) => (
-                  // FIX 2: 'flex-none' prevents shrinking. 'min-w' ensures size.
+                  // FIX 2: 'flex-none' is CRITICAL. It forces the browser to NOT squash the cards.
+                  // 'min-w-[...]' sets the size.
                   <div key={item.id} className="flex-none min-w-[200px] md:min-w-[280px] snap-start">
                     <MovieCard data={item} />
                   </div>

@@ -12,15 +12,17 @@ interface HeroSectionProps {
   featured: MediaItem;
 }
 
-// Utility to get YouTube ID
+// UPDATED UTILITY: Now handles 'shorts/' URLs
 const getYouTubeId = (url: string) => {
   if (!url) return null;
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+  // Added '|shorts\/' to the regex pattern
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|shorts\/)([^#&?]*).*/;
   const match = url.match(regExp);
   return (match && match[2].length === 11) ? match[2] : null;
 };
 
 export const HeroSection = ({ featured }: HeroSectionProps) => {
+  // ... (The rest of the file stays exactly the same)
   const ref = useRef<HTMLDivElement>(null);
   
   const { addToWatchlist, removeFromWatchlist, isInWatchlist } = useAppStore();
@@ -58,12 +60,10 @@ export const HeroSection = ({ featured }: HeroSectionProps) => {
 
   return (
     <div ref={ref} className="relative h-[95vh] w-full overflow-hidden bg-ebs-dark">
-      {/* BACKGROUND LAYER */}
       <motion.div
         style={{ y: backgroundY, opacity: backgroundOpacity }}
         className="absolute inset-0 z-0"
       >
-        {/* VIDEO BACKGROUND (Autoplay, Muted, Loop) */}
         {youtubeId ? (
           <div className="absolute inset-0 w-full h-full pointer-events-none scale-125">
             <iframe
@@ -74,20 +74,16 @@ export const HeroSection = ({ featured }: HeroSectionProps) => {
             />
           </div>
         ) : (
-          /* Fallback Image */
           <img
             src={(featured as any).backdropUrl || featured.thumbnailUrl}
             alt={featured.title}
             className="h-full w-full object-cover object-center"
           />
         )}
-
-        {/* Cinematic Gradients (Make text readable) */}
         <div className="absolute inset-0 z-10 bg-gradient-to-r from-ebs-dark via-ebs-dark/40 to-transparent" />
         <div className="absolute inset-0 z-10 bg-gradient-to-t from-ebs-dark via-ebs-dark/10 to-transparent" />
       </motion.div>
 
-      {/* CONTENT LAYER */}
       <div className="relative z-20 flex h-full max-w-7xl mx-auto flex-col justify-end pb-24 px-6 md:px-12">
         <motion.div
           variants={containerVariants}
@@ -121,7 +117,6 @@ export const HeroSection = ({ featured }: HeroSectionProps) => {
           </motion.p>
 
           <motion.div variants={textVariants} className="flex flex-wrap gap-4 pt-4">
-            {/* Watch Link goes to the page with sound enabled */}
             <Link href={`/watch/${featured.id}`}>
               <Button 
                 variant="primary" 
