@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import { motion, useScroll, useTransform, Variants } from "framer-motion";
-import { Play, Info, Plus, Check } from "lucide-react";
+import { Play, Plus, Check } from "lucide-react";
 import { MediaItem } from "@/data/cms";
 import { Button } from "../ui/Button";
 import { useAppStore } from "@/lib/store";
@@ -12,17 +12,15 @@ interface HeroSectionProps {
   featured: MediaItem;
 }
 
-// UPDATED UTILITY: Now handles 'shorts/' URLs
+// Utility to get YouTube ID (Shorts & Normal)
 const getYouTubeId = (url: string) => {
   if (!url) return null;
-  // Added '|shorts\/' to the regex pattern
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|shorts\/)([^#&?]*).*/;
   const match = url.match(regExp);
   return (match && match[2].length === 11) ? match[2] : null;
 };
 
 export const HeroSection = ({ featured }: HeroSectionProps) => {
-  // ... (The rest of the file stays exactly the same)
   const ref = useRef<HTMLDivElement>(null);
   
   const { addToWatchlist, removeFromWatchlist, isInWatchlist } = useAppStore();
@@ -59,13 +57,17 @@ export const HeroSection = ({ featured }: HeroSectionProps) => {
   };
 
   return (
-    <div ref={ref} className="relative h-[95vh] w-full overflow-hidden bg-ebs-dark">
+    // Changed h-[95vh] to h-screen for full immersion on mobile
+    <div ref={ref} className="relative h-screen md:h-[95vh] w-full overflow-hidden bg-ebs-dark">
+      
+      {/* BACKGROUND LAYER */}
       <motion.div
         style={{ y: backgroundY, opacity: backgroundOpacity }}
         className="absolute inset-0 z-0"
       >
         {youtubeId ? (
-          <div className="absolute inset-0 w-full h-full pointer-events-none scale-125">
+          // FIX IS HERE: scale-[3.5] on mobile fills the vertical height
+          <div className="absolute inset-0 w-full h-full pointer-events-none scale-[3.5] md:scale-125">
             <iframe
               src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${youtubeId}&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1&disablekb=1`}
               className="w-full h-full object-cover"
@@ -80,22 +82,25 @@ export const HeroSection = ({ featured }: HeroSectionProps) => {
             className="h-full w-full object-cover object-center"
           />
         )}
-        <div className="absolute inset-0 z-10 bg-gradient-to-r from-ebs-dark via-ebs-dark/40 to-transparent" />
+
+        {/* Adjusted Gradients to be less aggressive at the top */}
+        <div className="absolute inset-0 z-10 bg-gradient-to-r from-ebs-dark via-ebs-dark/20 to-transparent" />
         <div className="absolute inset-0 z-10 bg-gradient-to-t from-ebs-dark via-ebs-dark/10 to-transparent" />
       </motion.div>
 
-      <div className="relative z-20 flex h-full max-w-7xl mx-auto flex-col justify-end pb-24 px-6 md:px-12">
+      {/* CONTENT LAYER */}
+      <div className="relative z-20 flex h-full max-w-7xl mx-auto flex-col justify-end pb-32 md:pb-24 px-6 md:px-12">
         <motion.div
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="max-w-3xl space-y-6"
+          className="max-w-3xl space-y-4 md:space-y-6"
         >
           <motion.div variants={textVariants} className="flex items-center gap-3">
-             <span className="bg-ebs-crimson text-white px-3 py-1 text-xs font-bold tracking-widest uppercase rounded-sm shadow-[0_0_15px_rgba(214,44,44,0.5)]">
+             <span className="bg-ebs-crimson text-white px-3 py-1 text-[10px] md:text-xs font-bold tracking-widest uppercase rounded-sm shadow-[0_0_15px_rgba(214,44,44,0.5)]">
                New Premiere
              </span>
-             <div className="flex items-center gap-2 text-gray-300 font-medium text-sm tracking-wide">
+             <div className="flex items-center gap-2 text-gray-300 font-medium text-xs md:text-sm tracking-wide">
                 <span>{featured.year}</span>
                 <span className="text-ebs-crimson">•</span>
                 <span>{featured.rating}</span>
@@ -111,16 +116,16 @@ export const HeroSection = ({ featured }: HeroSectionProps) => {
 
           <motion.p
             variants={textVariants}
-            className="text-lg md:text-xl text-gray-200 line-clamp-3 max-w-2xl leading-relaxed text-shadow-sm"
+            className="text-sm md:text-xl text-gray-200 line-clamp-3 max-w-2xl leading-relaxed text-shadow-sm"
           >
             {featured.description}
           </motion.p>
 
-          <motion.div variants={textVariants} className="flex flex-wrap gap-4 pt-4">
+          <motion.div variants={textVariants} className="flex flex-wrap gap-4 pt-2 md:pt-4">
             <Link href={`/watch/${featured.id}`}>
               <Button 
                 variant="primary" 
-                className="h-14 px-8 text-lg hover:shadow-[0_0_20px_rgba(214,44,44,0.4)] transition-shadow"
+                className="h-12 md:h-14 px-6 md:px-8 text-base md:text-lg hover:shadow-[0_0_20px_rgba(214,44,44,0.4)] transition-shadow"
               >
                 <Play className="mr-2 h-5 w-5 fill-current" />
                 Play with Sound
@@ -130,7 +135,7 @@ export const HeroSection = ({ featured }: HeroSectionProps) => {
             <Button
               variant="secondary"
               onClick={handleListToggle}
-              className="h-14 px-8 text-lg group bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/20"
+              className="h-12 md:h-14 px-6 md:px-8 text-base md:text-lg group bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/20"
             >
               {isListed ? (
                 <Check className="mr-2 h-5 w-5 text-green-400" />

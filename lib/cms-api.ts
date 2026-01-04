@@ -1,7 +1,6 @@
 import { client, urlFor } from "@/sanity/client";
 import { MediaItem, NewsItem } from "@/data/cms";
 
-// --- TYPES ---
 export interface HomePageData {
   tickerText: string;
   heroItem: MediaItem | null;
@@ -10,7 +9,6 @@ export interface HomePageData {
   newReleases: MediaItem[];
   kidsFamily: MediaItem[];
   bentoGrid: MediaItem[];
-  // NEW: Automatic list
   recentLibrary: MediaItem[]; 
   liveSection: {
     title: string;
@@ -19,7 +17,6 @@ export interface HomePageData {
   };
 }
 
-// --- MAPPERS ---
 const mapSanityToMedia = (doc: any): MediaItem => {
   if (!doc) return {} as MediaItem;
   return {
@@ -49,11 +46,9 @@ const mapSanityToNews = (doc: any): NewsItem => ({
   tag: doc.tag || "General",
 });
 
-// --- API METHODS ---
 export const cmsApi = {
-  
   getHomePageData: async (): Promise<HomePageData> => {
-    // Query 1: Your Manual Configuration (Hero, Trending, etc)
+    // FIX 1: We use the empty brackets [] without limits to get ALL referenced items in manual lists
     const configQuery = `*[_type == "homePage"][0]{
       tickerText,
       heroMovie->,
@@ -65,35 +60,27 @@ export const cmsApi = {
       liveSection
     }`;
 
-    // Query 2: AUTOMATIC "Recently Added" (Fetches last 20 movies)
-    // We fetch everything needed to map it to MediaItem
-    const recentQuery = `*[_type == "movie"] | order(_createdAt desc)[0...20]{
+    // FIX 2: We increased the limit from [0...20] to [0...49] (50 items)
+    const recentQuery = `*[_type == "movie"] | order(_createdAt desc)[0...49]{
       _id, title, description, type, thumbnail, backdrop, videoUrl, rating, year, duration, categories, slug
     }`;
 
-    // Run both queries in parallel for speed
     const [configData, recentData] = await Promise.all([
       client.fetch(configQuery, {}, { cache: 'no-store' }),
       client.fetch(recentQuery, {}, { cache: 'no-store' })
     ]);
 
-    // Defaults
     const safeConfig = configData || {};
 
     return {
       tickerText: safeConfig.tickerText || "Welcome to EBS Premier+",
       heroItem: safeConfig.heroMovie ? mapSanityToMedia(safeConfig.heroMovie) : null,
-      
-      // Manual Lists
       trending: (safeConfig.trendingList || []).map(mapSanityToMedia),
       originals: (safeConfig.originalsList || []).map(mapSanityToMedia),
       newReleases: (safeConfig.newReleases || []).map(mapSanityToMedia),
       kidsFamily: (safeConfig.kidsFamily || []).map(mapSanityToMedia),
       bentoGrid: (safeConfig.curatedCollections || []).map(mapSanityToMedia),
-      
-      // Automatic List (The fix for your issue)
       recentLibrary: recentData.map(mapSanityToMedia),
-      
       liveSection: {
         title: safeConfig.liveSection?.title || "EBS Live",
         description: safeConfig.liveSection?.description || "Watch Now",
@@ -104,8 +91,8 @@ export const cmsApi = {
     };
   },
 
-  // Update News to fetch 12 items instead of 3
   getNews: async (): Promise<NewsItem[]> => {
+    // FIX 3: Increased news limit to 12
     const query = `*[_type == "news"] | order(publishedAt desc)[0...11]`;
     const data = await client.fetch(query, {}, { cache: 'no-store' });
     return data.map(mapSanityToNews);
