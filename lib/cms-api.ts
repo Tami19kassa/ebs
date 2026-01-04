@@ -2,15 +2,16 @@ import { client, urlFor } from "@/sanity/client";
 import { MediaItem, NewsItem } from "@/data/cms";
 
 // --- TYPES ---
-// These match the fields we defined in Sanity Schema
 export interface HomePageData {
   tickerText: string;
   heroItem: MediaItem | null;
   trending: MediaItem[];
   originals: MediaItem[];
-  newReleases: MediaItem[]; // Added
-  kidsFamily: MediaItem[];  // Added
+  newReleases: MediaItem[];
+  kidsFamily: MediaItem[];
   bentoGrid: MediaItem[];
+  // NEW: Automatic list
+  recentLibrary: MediaItem[]; 
   liveSection: {
     title: string;
     description: string;
@@ -19,26 +20,21 @@ export interface HomePageData {
 }
 
 // --- MAPPERS ---
-// Converts raw Sanity JSON into our clean App Interfaces
-
 const mapSanityToMedia = (doc: any): MediaItem => {
-  if (!doc) return {} as MediaItem; // Safety check
-  
+  if (!doc) return {} as MediaItem;
   return {
     id: doc._id,
     title: doc.title || "Untitled",
     description: doc.description || "",
     type: doc.type || "movie",
-    
-    // Images: Convert Sanity Image Object -> URL String
     thumbnailUrl: doc.thumbnail ? urlFor(doc.thumbnail).width(600).url() : "",
-    backdropUrl: doc.backdrop ? urlFor(doc.backdrop).width(1920).url() : undefined, // High-res for Hero/Player
-    
+    backdropUrl: doc.backdrop ? urlFor(doc.backdrop).width(1920).url() : undefined,
     videoUrl: doc.videoUrl || "",
     rating: doc.rating || "NR",
     year: doc.year || new Date().getFullYear(),
     duration: doc.duration || "",
     categories: doc.categories || [],
+    slug: doc.slug,
     featured: !!doc.backdrop, 
   };
 };
@@ -54,13 +50,11 @@ const mapSanityToNews = (doc: any): NewsItem => ({
 });
 
 // --- API METHODS ---
-
 export const cmsApi = {
   
-  // 1. Fetch the Master Homepage Configuration
   getHomePageData: async (): Promise<HomePageData> => {
-    // GROQ Query: Fetches the Singleton 'homePage' and expands all the references (->)
-    const query = `*[_type == "homePage"][0]{
+    // Query 1: Your Manual Configuration (Hero, Trending, etc)
+    const configQuery = `*[_type == "homePage"][0]{
       tickerText,
       heroMovie->,
       trendingList[]->,
@@ -71,59 +65,58 @@ export const cmsApi = {
       liveSection
     }`;
 
-    // { cache: 'no-store' } forces Next.js to fetch fresh data on every reload
-    const data = await client.fetch(query, {}, { cache: 'no-store' });
+    // Query 2: AUTOMATIC "Recently Added" (Fetches last 20 movies)
+    // We fetch everything needed to map it to MediaItem
+    const recentQuery = `*[_type == "movie"] | order(_createdAt desc)[0...20]{
+      _id, title, description, type, thumbnail, backdrop, videoUrl, rating, year, duration, categories, slug
+    }`;
 
-    // Fallbacks to prevent crashes if Sanity is empty
-    if (!data) return {
-      tickerText: "Welcome to EBS Premier+",
-      heroItem: null,
-      trending: [],
-      originals: [],
-      newReleases: [],
-      kidsFamily: [],
-      bentoGrid: [],
-      liveSection: { title: "Live TV", description: "Stream Offline", coverImage: "" }
-    };
+    // Run both queries in parallel for speed
+    const [configData, recentData] = await Promise.all([
+      client.fetch(configQuery, {}, { cache: 'no-store' }),
+      client.fetch(recentQuery, {}, { cache: 'no-store' })
+    ]);
+
+    // Defaults
+    const safeConfig = configData || {};
 
     return {
-      tickerText: data.tickerText || "",
-      heroItem: data.heroMovie ? mapSanityToMedia(data.heroMovie) : null,
+      tickerText: safeConfig.tickerText || "Welcome to EBS Premier+",
+      heroItem: safeConfig.heroMovie ? mapSanityToMedia(safeConfig.heroMovie) : null,
       
-      // Map all lists (safely handle nulls with || [])
-      trending: (data.trendingList || []).map(mapSanityToMedia),
-      originals: (data.originalsList || []).map(mapSanityToMedia),
-      newReleases: (data.newReleases || []).map(mapSanityToMedia),
-      kidsFamily: (data.kidsFamily || []).map(mapSanityToMedia),
-      bentoGrid: (data.curatedCollections || []).map(mapSanityToMedia),
+      // Manual Lists
+      trending: (safeConfig.trendingList || []).map(mapSanityToMedia),
+      originals: (safeConfig.originalsList || []).map(mapSanityToMedia),
+      newReleases: (safeConfig.newReleases || []).map(mapSanityToMedia),
+      kidsFamily: (safeConfig.kidsFamily || []).map(mapSanityToMedia),
+      bentoGrid: (safeConfig.curatedCollections || []).map(mapSanityToMedia),
+      
+      // Automatic List (The fix for your issue)
+      recentLibrary: recentData.map(mapSanityToMedia),
       
       liveSection: {
-        title: data.liveSection?.title || "EBS Live",
-        description: data.liveSection?.description || "Watch Now",
-        // Process the Live Section Background Image
-        coverImage: data.liveSection?.coverImage 
-          ? urlFor(data.liveSection.coverImage).width(1920).quality(80).url() 
+        title: safeConfig.liveSection?.title || "EBS Live",
+        description: safeConfig.liveSection?.description || "Watch Now",
+        coverImage: safeConfig.liveSection?.coverImage 
+          ? urlFor(safeConfig.liveSection.coverImage).width(1920).url() 
           : ""
       }
     };
   },
 
-  // 2. Fetch Latest News
+  // Update News to fetch 12 items instead of 3
   getNews: async (): Promise<NewsItem[]> => {
-    const query = `*[_type == "news"] | order(publishedAt desc)[0...3]`;
+    const query = `*[_type == "news"] | order(publishedAt desc)[0...11]`;
     const data = await client.fetch(query, {}, { cache: 'no-store' });
     return data.map(mapSanityToNews);
   },
 
-  // 3. Search Functionality (Used by Search Overlay)
   searchContent: async (term: string): Promise<MediaItem[]> => {
-    // Matches title matching the term (case insensitive wildcard)
     const query = `*[_type == "movie" && title match "${term}*"]`;
     const data = await client.fetch(query, {}, { cache: 'no-store' });
     return data.map(mapSanityToMedia);
   },
 
-  // 4. Single Movie Fetch (Used by Watch Page)
   getContentById: async (id: string): Promise<MediaItem | null> => {
     const query = `*[_type == "movie" && _id == $id][0]`;
     const data = await client.fetch(query, { id }, { cache: 'no-store' });

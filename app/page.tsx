@@ -7,16 +7,15 @@ import { Footer } from "@/components/layout/Footer";
 import { Navbar } from "@/components/layout/Navbar";
 import { cmsApi } from "@/lib/cms-api";
 
-// Helper: Horizontal Scroll Container with forced width for children
+// FIX 1: Use 'flex-nowrap' and force overflow handling
 const ScrollContainer = ({ children }: { children: React.ReactNode }) => (
-  // flex-nowrap is CRITICAL for horizontal scrolling
-  <div className="flex gap-4 overflow-x-auto pb-8 pt-4 snap-x snap-mandatory no-scrollbar px-6 md:px-12 max-w-[1400px] mx-auto flex-nowrap">
+  <div className="flex gap-4 overflow-x-auto pb-8 pt-4 snap-x snap-mandatory no-scrollbar px-6 md:px-12 max-w-[1400px] mx-auto flex-nowrap w-full">
     {children}
   </div>
 );
 
 const SectionHeader = ({ title, sub }: { title: string; sub?: string }) => (
-  <div className="mb-4 px-6 md:px-12 max-w-[1400px] mx-auto">
+  <div className="mb-2 px-6 md:px-12 max-w-[1400px] mx-auto">
     <h2 className="text-xl md:text-2xl font-bold text-white flex items-center gap-3">
       <span className="w-1 h-6 bg-ebs-crimson rounded-full" />
       {title}
@@ -31,7 +30,7 @@ export default async function Home() {
     cmsApi.getNews()
   ]);
 
-  const { heroItem, trending, originals, newReleases, kidsFamily, bentoGrid, liveSection, tickerText } = homeData;
+  const { heroItem, trending, originals, newReleases, kidsFamily, bentoGrid, liveSection, tickerText, recentLibrary } = homeData;
 
   return (
     <main className="min-h-screen bg-ebs-dark pb-20" id="home">
@@ -41,14 +40,14 @@ export default async function Home() {
 
       <div className="relative z-20 space-y-12 -mt-16">
         
-        {/* SECTION 1: TRENDING */}
+        {/* TRENDING */}
         {trending.length > 0 && (
           <section id="trending">
              <SectionHeader title="Trending Now" />
              <ScrollContainer>
                 {trending.map((item) => (
-                  // min-w ensures cards don't shrink
-                  <div key={item.id} className="min-w-[200px] md:min-w-[280px] snap-start">
+                  // FIX 2: 'flex-none' prevents shrinking. 'min-w' ensures size.
+                  <div key={item.id} className="flex-none min-w-[200px] md:min-w-[280px] snap-start">
                     <MovieCard data={item} />
                   </div>
                 ))}
@@ -56,13 +55,13 @@ export default async function Home() {
           </section>
         )}
 
-        {/* SECTION 2: ORIGINALS */}
+        {/* ORIGINALS */}
         {originals.length > 0 && (
           <section id="originals">
             <SectionHeader title="EBS Originals" sub="Exclusive Series" />
             <ScrollContainer>
                 {originals.map((item) => (
-                  <div key={item.id} className="min-w-[250px] md:min-w-[350px] snap-start">
+                  <div key={item.id} className="flex-none min-w-[250px] md:min-w-[350px] snap-start">
                     <MovieCard data={item} />
                   </div>
                 ))}
@@ -70,13 +69,13 @@ export default async function Home() {
           </section>
         )}
 
-        {/* SECTION 3: NEW RELEASES */}
+        {/* NEW RELEASES */}
         {newReleases.length > 0 && (
           <section>
              <SectionHeader title="New Releases" />
              <ScrollContainer>
                 {newReleases.map((item) => (
-                  <div key={item.id} className="min-w-[200px] md:min-w-[280px] snap-start">
+                  <div key={item.id} className="flex-none min-w-[200px] md:min-w-[280px] snap-start">
                     <MovieCard data={item} />
                   </div>
                 ))}
@@ -84,8 +83,7 @@ export default async function Home() {
           </section>
         )}
 
-        {/* LIVE TV SECTION */}
-        {/* The Image here comes directly from Sanity liveSection.coverImage */}
+        {/* LIVE TV */}
         <section id="live" className="relative h-[400px] md:h-[500px] w-full bg-fixed bg-center bg-cover my-10 border-y border-white/10" 
            style={{ backgroundImage: `url('${liveSection.coverImage || "https://images.unsplash.com/photo-1598550476439-6847785fcea6?q=80"}')` }}
         >
@@ -101,13 +99,13 @@ export default async function Home() {
             </div>
         </section>
 
-        {/* SECTION 4: KIDS & FAMILY */}
-        {kidsFamily.length > 0 && (
+        {/* RECENTLY ADDED (Full Library) */}
+        {recentLibrary.length > 0 && (
           <section>
-             <SectionHeader title="Kids & Family" />
+             <SectionHeader title="Recently Added" sub="Full Library" />
              <ScrollContainer>
-                {kidsFamily.map((item) => (
-                  <div key={item.id} className="min-w-[200px] md:min-w-[280px] snap-start">
+                {recentLibrary.map((item) => (
+                  <div key={item.id} className="flex-none min-w-[200px] md:min-w-[280px] snap-start">
                     <MovieCard data={item} />
                   </div>
                 ))}
@@ -115,7 +113,21 @@ export default async function Home() {
           </section>
         )}
 
-        {/* SECTION 5: BENTO GRID */}
+        {/* KIDS & FAMILY */}
+        {kidsFamily.length > 0 && (
+          <section>
+             <SectionHeader title="Kids & Family" />
+             <ScrollContainer>
+                {kidsFamily.map((item) => (
+                  <div key={item.id} className="flex-none min-w-[200px] md:min-w-[280px] snap-start">
+                    <MovieCard data={item} />
+                  </div>
+                ))}
+             </ScrollContainer>
+          </section>
+        )}
+
+        {/* BENTO GRID */}
         {bentoGrid.length > 0 && (
           <section>
             <SectionHeader title="Curated Collections" />
