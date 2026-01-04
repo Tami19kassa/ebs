@@ -2,56 +2,43 @@
 
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { Search, User, Menu, X, ChevronRight } from 'lucide-react';
-import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion';
+import { Search, User, Menu, X, ChevronRight, LogIn } from 'lucide-react';
+// 1. ADD 'Variants' TO THIS IMPORT
+import { motion, AnimatePresence, useScroll, useMotionValueEvent, Variants } from 'framer-motion';
 import { useAppStore } from '@/lib/store';
 import Link from 'next/link';
-import { LiveBar } from '../ui/LiveBar'; // Ensure this path is correct based on your folder structure
+import { LiveBar } from '../ui/LiveBar';
 
 interface NavbarProps {
   tickerText?: string;
 }
 
 export const Navbar = ({ tickerText }: NavbarProps) => {
-  // 1. Route Awareness: Hide Navbar if we are in the Admin Studio
   const pathname = usePathname();
   const isStudio = pathname?.startsWith('/studio');
-
-  // 2. State & Hooks
   const { scrollY } = useScroll();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { toggleSearch, user, toggleAuthModal } = useAppStore();
 
-  // Return null immediately if we are in the Studio
   if (isStudio) return null;
 
-  // 3. Scroll Detection for Glass Effect
   useMotionValueEvent(scrollY, "change", (latest) => {
     setIsScrolled(latest > 50);
   });
 
-  // 4. Smooth Scroll Handler
   const handleScroll = (id: string) => {
-    setIsMobileMenuOpen(false); // Close mobile menu first
-    
-    // If we are not on the homepage, redirect first (optional logic depending on routing)
+    setIsMobileMenuOpen(false); 
     if (pathname !== '/') {
         window.location.href = `/#${id}`;
         return;
     }
-
     const element = document.getElementById(id);
     if (element) {
-      // Offset by 100px to account for the fixed header height
       const offset = 100;
       const elementPosition = element.getBoundingClientRect().top;
       const offsetPosition = elementPosition + window.scrollY - offset;
-
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: "smooth"
-      });
+      window.scrollTo({ top: offsetPosition, behavior: "smooth" });
     }
   };
 
@@ -63,158 +50,182 @@ export const Navbar = ({ tickerText }: NavbarProps) => {
     { name: "Live TV", id: "live", isLive: true },
   ];
 
+  // 2. EXPLICITLY TYPE THIS AS 'Variants'
+  const menuVariants: Variants = {
+    closed: { opacity: 0, x: "100%" },
+    open: { 
+      opacity: 1, 
+      x: 0, 
+      transition: { type: "spring", stiffness: 300, damping: 30 } 
+    },
+    exit: { 
+      opacity: 0, 
+      x: "100%", 
+      transition: { duration: 0.3 } 
+    }
+  };
+
+  // 3. EXPLICITLY TYPE THIS AS 'Variants' TOO
+  const linkVariants: Variants = {
+    closed: { x: 50, opacity: 0 },
+    open: (i: number) => ({ 
+      x: 0, 
+      opacity: 1, 
+      transition: { delay: i * 0.1 } 
+    })
+  };
+
   return (
     <>
-      {/* 
-         MASTER HEADER CONTAINER 
-         Wraps LiveBar and Main Nav to ensure they stick together.
-      */}
       <motion.header
         className={`fixed top-0 w-full z-50 transition-all duration-500 border-b border-transparent ${
-          isScrolled || isMobileMenuOpen 
-            ? 'bg-ebs-dark/95 backdrop-blur-xl border-white/5 shadow-2xl' 
-            : 'bg-linear-to-b from-black/90 to-transparent'
+          isScrolled 
+            ? 'bg-ebs-dark/90 backdrop-blur-md border-white/5 shadow-2xl' 
+            : 'bg-gradient-to-b from-black/90 to-transparent'
         }`}
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        {/* Dynamic Live Ticker - only renders if text exists */}
         {tickerText && <LiveBar text={tickerText} />}
 
         <div className="max-w-[1400px] mx-auto px-6 h-16 md:h-20 flex items-center justify-between">
           
-          {/* MOBILE: Hamburger Menu */}
+          {/* MOBILE: Hamburger */}
           <button 
-            className="md:hidden text-white hover:text-ebs-crimson transition-colors p-1"
+            className="md:hidden text-white hover:text-ebs-crimson transition-colors z-50 relative"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            aria-label="Toggle Menu"
           >
-            {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
+            {!isMobileMenuOpen && <Menu size={28} />}
           </button>
 
-          {/* BRAND LOGO */}
+          {/* LOGO */}
           <Link 
             href="/" 
-            className="text-2xl md:text-3xl font-bold font-heading text-ebs-crimson tracking-wider flex-1 md:flex-none text-center md:text-left hover:opacity-90 transition-opacity"
+            className="text-2xl md:text-3xl font-bold font-heading text-ebs-crimson tracking-wider flex-1 md:flex-none text-center md:text-left z-50"
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           >
             EBS<span className="text-white">PREMIER+</span>
           </Link>
 
-          {/* DESKTOP: Navigation Links */}
+          {/* DESKTOP NAV */}
           <div className="hidden md:flex gap-8 text-sm font-medium text-gray-300 mx-auto">
             {navLinks.map((link) => (
               <button
                 key={link.name}
                 onClick={() => handleScroll(link.id)}
-                className={`hover:text-white transition-colors flex items-center gap-2 group py-2 ${
-                    link.highlight ? 'text-ebs-crimson font-bold' : ''
-                }`}
+                className={`hover:text-white transition-colors flex items-center gap-2 group py-2 ${link.highlight ? 'text-ebs-crimson font-bold' : ''}`}
               >
-                {link.isLive && (
-                    <span className="w-2 h-2 bg-red-600 rounded-full animate-pulse shadow-[0_0_10px_red]" />
-                )}
+                {link.isLive && <span className="w-2 h-2 bg-red-600 rounded-full animate-pulse shadow-[0_0_10px_red]" />}
                 <span className="relative">
                     {link.name}
-                    {/* Underline Hover Animation */}
                     <span className="absolute left-0 bottom-0 w-0 h-[2px] bg-ebs-crimson transition-all duration-300 group-hover:w-full" />
                 </span>
               </button>
             ))}
           </div>
 
-          {/* ACTIONS: Search & Auth */}
-          <div className="flex items-center gap-4 md:gap-6 text-white justify-end flex-none md:flex-1 w-[28px] md:w-auto">
-            <motion.button 
-                whileHover={{ scale: 1.1 }} 
-                whileTap={{ scale: 0.95 }}
-                onClick={() => toggleSearch(true)}
-                className="hover:text-ebs-crimson transition-colors"
-            >
-              <Search className="w-5 h-5 md:w-6 md:h-6" />
+          {/* ICONS */}
+          <div className="flex items-center gap-4 md:gap-6 text-white justify-end flex-none md:flex-1 w-[28px] md:w-auto z-50">
+            <motion.button onClick={() => toggleSearch(true)}>
+              <Search className="w-5 h-5 md:w-6 md:h-6 hover:text-ebs-crimson transition-colors" />
             </motion.button>
-            
             <motion.button 
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
               onClick={() => !user && toggleAuthModal(true)}
-              className="hidden md:flex items-center gap-2 group cursor-pointer"
+              className="hidden md:flex items-center gap-2"
             >
               {user ? (
-                 <div className="flex items-center gap-2">
-                     <span className="text-sm font-medium text-gray-300 group-hover:text-white">Hi, {user.name.split(' ')[0]}</span>
-                     <img src={user.avatar} alt="User" className="w-9 h-9 rounded-full border-2 border-transparent group-hover:border-ebs-crimson transition-colors object-cover" />
-                 </div>
+                 <img src={user.avatar} alt="User" className="w-9 h-9 rounded-full border border-transparent hover:border-ebs-crimson transition-colors object-cover" />
               ) : (
-                <div className="bg-white/10 p-2 rounded-full hover:bg-ebs-crimson transition-colors">
-                    <User className="w-5 h-5" />
-                </div>
+                <div className="bg-white/10 p-2 rounded-full hover:bg-ebs-crimson transition-colors"><User className="w-5 h-5" /></div>
               )}
             </motion.button>
           </div>
         </div>
       </motion.header>
 
-      {/* 
-         MOBILE MENU DRAWER 
-         Full screen overlay with cinematic entrance
-      */}
+      {/* MOBILE MENU */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, x: "-100%" }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: "-100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed inset-0 z-40 bg-ebs-dark pt-32 px-6 md:hidden overflow-y-auto"
+            variants={menuVariants}
+            initial="closed"
+            animate="open"
+            exit="exit"
+            className="fixed inset-0 z-[60] bg-ebs-dark/95 backdrop-blur-xl flex flex-col"
           >
-             <div className="flex flex-col gap-6">
-                {navLinks.map((link, i) => (
-                  <motion.button
-                    key={link.name}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.05 }}
-                    onClick={() => handleScroll(link.id)}
-                    className={`flex items-center justify-between text-2xl font-heading font-bold text-white border-b border-white/10 pb-4 active:text-ebs-crimson active:bg-white/5 transition-colors ${
-                        link.highlight ? 'text-ebs-crimson' : ''
-                    }`}
-                  >
-                    <div className="flex items-center gap-4">
-                        {link.isLive && <span className="w-2 h-2 bg-red-600 rounded-full animate-pulse" />}
-                        {link.name}
-                    </div>
-                    <ChevronRight className="text-gray-600" size={20} />
-                  </motion.button>
-                ))}
+            {/* Ambient Background Glow */}
+            <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-ebs-crimson rounded-full blur-[150px] opacity-20 pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-[200px] h-[200px] bg-ebs-purple rounded-full blur-[100px] opacity-20 pointer-events-none" />
 
-                {/* Mobile Auth Section */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className="mt-8"
+            {/* Menu Header */}
+            <div className="flex items-center justify-between px-6 h-20 md:h-24 border-b border-white/5 relative z-10">
+                <span className="text-2xl font-bold font-heading text-ebs-crimson tracking-wider">
+                    EBS<span className="text-white">PREMIER+</span>
+                </span>
+                <button 
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-ebs-crimson transition-colors"
                 >
-                   {user ? (
-                       <div className="bg-white/10 p-4 rounded-xl flex items-center gap-4">
-                           <img src={user.avatar} alt={user.name} className="w-12 h-12 rounded-full" />
-                           <div>
-                               <p className="font-bold text-white">{user.name}</p>
-                               <button className="text-xs text-ebs-crimson uppercase font-bold tracking-wider mt-1">Manage Account</button>
-                           </div>
-                       </div>
-                   ) : (
-                       <button 
+                    <X className="text-white" size={24} />
+                </button>
+            </div>
+
+            {/* Links List */}
+            <div className="flex-1 flex flex-col justify-center px-8 gap-8 overflow-y-auto">
+                {navLinks.map((link, i) => (
+                    <motion.button
+                        key={link.name}
+                        custom={i}
+                        variants={linkVariants}
+                        onClick={() => handleScroll(link.id)}
+                        className={`text-left group flex items-center justify-between ${link.highlight ? 'text-ebs-crimson' : 'text-white'}`}
+                    >
+                        <span className={`text-4xl md:text-5xl font-heading font-bold transition-all duration-300 group-hover:pl-4 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r ${link.highlight ? 'from-ebs-crimson to-white' : 'from-white to-gray-400'}`}>
+                            {link.name}
+                        </span>
+                        {link.isLive && (
+                            <span className="px-3 py-1 bg-red-600/20 border border-red-500 text-red-500 text-xs font-bold tracking-widest rounded uppercase animate-pulse">
+                                Live
+                            </span>
+                        )}
+                    </motion.button>
+                ))}
+            </div>
+
+            {/* Menu Footer / Auth */}
+            <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="p-8 border-t border-white/5 relative z-10"
+            >
+                {user ? (
+                    <div className="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/5">
+                        <img src={user.avatar} alt="User" className="w-12 h-12 rounded-full object-cover" />
+                        <div>
+                            <p className="text-white font-bold text-lg">{user.name}</p>
+                            <button className="text-ebs-crimson text-sm font-medium">Manage Account</button>
+                        </div>
+                    </div>
+                ) : (
+                    <button
                         onClick={() => { toggleAuthModal(true); setIsMobileMenuOpen(false); }}
-                        className="w-full bg-ebs-crimson text-white py-4 rounded-xl font-bold text-lg hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
-                       >
-                           <User size={20} />
-                           Sign In / Register
-                       </button>
-                   )}
-                </motion.div>
-             </div>
+                        className="w-full py-5 rounded-xl bg-gradient-to-r from-ebs-crimson to-red-700 text-white font-bold text-lg shadow-lg shadow-red-900/30 flex items-center justify-center gap-3 active:scale-95 transition-transform"
+                    >
+                        <LogIn size={20} />
+                        Sign In / Register
+                    </button>
+                )}
+                
+                <div className="mt-6 flex justify-center gap-6 text-gray-500 text-xs tracking-widest uppercase">
+                    <span>Privacy</span>
+                    <span>•</span>
+                    <span>Terms</span>
+                    <span>•</span>
+                    <span>Help</span>
+                </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
