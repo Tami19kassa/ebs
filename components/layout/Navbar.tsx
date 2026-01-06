@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Search, User, Menu, X, LogIn } from 'lucide-react';
 import { motion, AnimatePresence, useScroll, useMotionValueEvent, Variants } from 'framer-motion';
 import { useAppStore } from '@/lib/store';
@@ -16,6 +16,7 @@ interface NavbarProps {
 
 export const Navbar = ({ tickerText }: NavbarProps) => {
   const pathname = usePathname();
+  const router = useRouter();
   const isStudio = pathname?.startsWith('/studio');
   const { scrollY } = useScroll();
   const [isScrolled, setIsScrolled] = useState(false);
@@ -28,18 +29,24 @@ export const Navbar = ({ tickerText }: NavbarProps) => {
     setIsScrolled(latest > 50);
   });
 
-  const handleScroll = (id: string) => {
-    setIsMobileMenuOpen(false); 
-    if (pathname !== '/') {
-        window.location.href = `/#${id}`;
-        return;
+  const handleNavigation = (id: string, isLive?: boolean) => {
+    setIsMobileMenuOpen(false);
+    if (pathname === '/') {
+        scrollToSection(id);
+    } else {
+        router.push(`/#${id}`);
     }
+  };
+
+  const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
       const offset = 100;
       const elementPosition = element.getBoundingClientRect().top;
       const offsetPosition = elementPosition + window.scrollY - offset;
       window.scrollTo({ top: offsetPosition, behavior: "smooth" });
+    } else {
+      if(id === 'home') window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
@@ -62,7 +69,6 @@ export const Navbar = ({ tickerText }: NavbarProps) => {
     open: (i: number) => ({ x: 0, opacity: 1, transition: { delay: i * 0.1 } })
   };
 
-  // Dynamic Text Color: White when transparent (over video), Theme color when scrolled
   const textColorClass = isScrolled ? "text-foreground" : "text-white";
 
   return (
@@ -93,7 +99,7 @@ export const Navbar = ({ tickerText }: NavbarProps) => {
           <Link 
             href="/" 
             className="flex items-center gap-2 z-50 flex-1 md:flex-none justify-center md:justify-start"
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            onClick={() => scrollToSection('home')}
           >
             <div className="relative w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden border-2 border-white/20 bg-white">
                 <Image src="/logo.png" alt="EBS Logo" fill className="object-cover" />
@@ -103,12 +109,15 @@ export const Navbar = ({ tickerText }: NavbarProps) => {
             </span>
           </Link>
 
-          {/* DESKTOP NAV - Centered */}
-          <div className={`hidden md:flex gap-8 text-sm font-medium absolute left-1/2 transform -translate-x-1/2 ${isScrolled ? 'text-muted' : 'text-gray-300'}`}>
+          {/* 
+             DESKTOP NAV - CENTERED
+             FIX APPLIED: z-[60] ensures this layer is above the Icons layer
+          */}
+          <div className={`hidden md:flex gap-8 text-sm font-medium absolute left-1/2 transform -translate-x-1/2 z-[60] pointer-events-auto ${isScrolled ? 'text-muted' : 'text-gray-300'}`}>
             {navLinks.map((link) => (
               <button
                 key={link.name}
-                onClick={() => handleScroll(link.id)}
+                onClick={() => handleNavigation(link.id, link.isLive)}
                 className={`hover:text-ebs-crimson transition-colors flex items-center gap-2 group py-2 ${link.highlight ? 'text-ebs-crimson font-bold' : ''}`}
               >
                 {link.isLive && <span className="w-2 h-2 bg-red-600 rounded-full animate-pulse shadow-[0_0_10px_red]" />}
@@ -132,10 +141,10 @@ export const Navbar = ({ tickerText }: NavbarProps) => {
             >
               {user ? (
                  <div className="relative w-9 h-9">
-                    <Image src={user.avatar} alt="User" fill className="rounded-full border border-transparent hover:border-ebs-crimson transition-colors object-cover" />
+                    <Image src={user.avatar || "/default-avatar.png"} alt="User" fill className="rounded-full border border-transparent hover:border-ebs-crimson transition-colors object-cover" />
                  </div>
               ) : (
-                <div className={`p-2 rounded-full hover:bg-ebs-crimson transition-colors ${isScrolled ? 'bg-black/10' : 'bg-white/10'}`}>
+                <div className={`p-2 rounded-full hover:bg-ebs-crimson transition-colors ${isScrolled ? 'bg-black/10 dark:bg-white/10' : 'bg-white/10'}`}>
                     <User className="w-5 h-5" />
                 </div>
               )}
@@ -144,7 +153,7 @@ export const Navbar = ({ tickerText }: NavbarProps) => {
         </div>
       </motion.header>
 
-      {/* MOBILE MENU - Uses Theme Background */}
+      {/* MOBILE MENU */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
@@ -179,7 +188,7 @@ export const Navbar = ({ tickerText }: NavbarProps) => {
                         key={link.name}
                         custom={i}
                         variants={linkVariants}
-                        onClick={() => handleScroll(link.id)}
+                        onClick={() => handleNavigation(link.id, link.isLive)}
                         className={`text-left group flex items-center justify-between ${link.highlight ? 'text-ebs-crimson' : 'text-foreground'}`}
                     >
                         <span className={`text-4xl md:text-5xl font-heading font-bold transition-all duration-300 group-hover:pl-4 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r ${link.highlight ? 'from-ebs-crimson to-white' : 'from-foreground to-gray-400'}`}>
@@ -193,7 +202,7 @@ export const Navbar = ({ tickerText }: NavbarProps) => {
                     </motion.button>
                 ))}
             </div>
-
+            
             <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -203,7 +212,7 @@ export const Navbar = ({ tickerText }: NavbarProps) => {
                 {user ? (
                     <div className="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/5">
                         <div className="relative w-12 h-12">
-                            <Image src={user.avatar} alt="User" fill className="rounded-full object-cover" />
+                            <Image src={user.avatar || "/default-avatar.png"} alt="User" fill className="rounded-full object-cover" />
                         </div>
                         <div>
                             <p className="text-foreground font-bold text-lg">{user.name}</p>
