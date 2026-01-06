@@ -7,15 +7,17 @@ import Image from "next/image";
 export const NewsSection = ({ news }: { news: NewsItem[] }) => {
   if (!news || news.length === 0) return null;
 
-  // 1. Split content: 1 Main Feature, the rest are Grid Items
   const mainArticle = news[0];
-  const otherArticles = news.slice(1); // Takes everyone else (up to API limit)
+  const otherArticles = news.slice(1);
 
   return (
-    <section className="py-20 border-t border-white/5 bg-ebs-charcoal/30">
+    // FIX: Removed 'bg-ebs-charcoal/30'. Used 'border-gray-500/10' for subtle separation.
+    <section className="py-20 border-t border-gray-500/10">
         <div className="max-w-[1400px] mx-auto px-6">
             <div className="flex items-center justify-between mb-10">
-                <h2 className="text-3xl font-heading font-bold text-white">Latest News</h2>
+                {/* FIX: Changed 'text-white' to 'text-foreground' (Adapts to theme) */}
+                <h2 className="text-3xl font-heading font-bold text-foreground">Latest News</h2>
+                
                 <button className="text-ebs-crimson text-sm font-bold flex items-center gap-2 hover:gap-3 transition-all">
                     VIEW ARCHIVE <ArrowRight size={16} />
                 </button>
@@ -24,10 +26,11 @@ export const NewsSection = ({ news }: { news: NewsItem[] }) => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 
                 {/* --- MAIN FEATURE (Left Side) --- */}
+                {/* This text stays WHITE because it is on top of an image */}
                 <motion.div 
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
-                    className="lg:col-span-2 relative h-[400px] md:h-[500px] group cursor-pointer overflow-hidden rounded-2xl border border-white/10"
+                    className="lg:col-span-2 relative h-[400px] md:h-[500px] group cursor-pointer overflow-hidden rounded-2xl border border-gray-500/10 shadow-premium"
                 >
                     <Image 
                         src={mainArticle.thumbnailUrl} 
@@ -57,17 +60,22 @@ export const NewsSection = ({ news }: { news: NewsItem[] }) => {
                             initial={{ opacity: 0, x: 20 }}
                             whileInView={{ opacity: 1, x: 0 }}
                             transition={{ delay: i * 0.1 }}
-                            className="flex gap-4 p-3 rounded-xl hover:bg-white/5 transition-colors cursor-pointer group/item border border-transparent hover:border-white/5"
+                            // FIX: Added 'bg-ebs-charcoal' (adapts to white/dark) and 'shadow-sm' for light mode visibility
+                            className="flex gap-4 p-3 rounded-xl bg-ebs-charcoal hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer group/item border border-gray-500/10 shadow-sm"
                         >
                             <div className="relative w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden">
                                 <Image src={item.thumbnailUrl} alt={item.headline} fill className="object-cover" />
                             </div>
                             <div className="flex flex-col justify-center">
                                 <span className="text-ebs-crimson text-[10px] font-bold uppercase tracking-wider mb-1">{item.tag}</span>
-                                <h4 className="text-sm font-bold text-white leading-snug group-hover/item:text-ebs-crimson transition-colors line-clamp-2">
+                                
+                                {/* FIX: Changed 'text-white' to 'text-foreground' */}
+                                <h4 className="text-sm font-bold text-foreground leading-snug group-hover/item:text-ebs-crimson transition-colors line-clamp-2">
                                     {item.headline}
                                 </h4>
-                                <span className="text-xs text-gray-500 mt-2">{item.publishedAt}</span>
+                                
+                                {/* FIX: Changed text color to 'text-muted' */}
+                                <span className="text-xs text-muted mt-2">{item.publishedAt}</span>
                             </div>
                         </motion.div>
                     ))}
