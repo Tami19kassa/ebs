@@ -1,57 +1,105 @@
 @import "tailwindcss";
 
-@theme {
-  /* Cinematic Color Palette */
-  --color-ebs-dark: #0F0F0F;
-  --color-ebs-charcoal: #1E1E24;
-  --color-ebs-purple: #1E002B;
-  --color-ebs-crimson: #D62C2C;
-  --color-ebs-gold: #FFD700;
-
-  /* Typography */
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui;
-  --font-heading: var(--font-playfair), serif;
-
-  /* Custom Backgrounds */
-  --background-image-cinematic-fade: linear-gradient(to top, #0F0F0F 10%, transparent 90%);
-  --background-image-radial-faded: radial-gradient(circle, var(--color-ebs-purple) 0%, transparent 70%);
-
-  /* Animation Tokens (Optional - usually handled by Framer Motion in this stack, 
-     but good for standard CSS transitions) */
-  --animate-fade-in: fadeIn 0.5s ease-out;
-}
-
-/* Base Styles */
 @layer base {
   :root {
-    --background: var(--color-ebs-dark);
-    --foreground: #ffffff;
+    /* --- DARK MODE (Cinematic / Theater) --- */
+    --bg-main: #0a0a0a;
+    --bg-card: #171717;
+    --bg-header: rgba(10, 10, 10, 0.85);
+    --text-main: #ededed;
+    --text-muted: #a1a1aa;
+    --border-color: rgba(255, 255, 255, 0.1);
+    
+    --brand-primary: #F37021; /* EBS Orange */
+    
+    /* Dark mode needs sharp, subtle shadows */
+    --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+    --overlay-gradient: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 50%, transparent 100%);
+  }
+
+  /* --- LIGHT MODE (Premium / Editorial) --- */
+  :root[data-theme='light'] {
+    /* 
+       THE FIX: No more flat white. 
+       We use a very subtle orange-tinted gray to warm up the screen.
+    */
+    --bg-main: #f8f7f5; 
+    
+    /* Cards are pure white to pop against the off-white bg */
+    --bg-card: #ffffff; 
+    
+    --bg-header: rgba(255, 255, 255, 0.85);
+    --text-main: #1a1a1a;
+    --text-muted: #64748b;
+    --border-color: rgba(0, 0, 0, 0.05);
+    
+    --brand-primary: #ea580c; 
+
+    /* 
+       THE "EXPENSIVE" SHADOW: 
+       A diffused, colored shadow that creates a floating effect.
+    */
+    --shadow-card: 
+      0 10px 40px -10px rgba(243, 112, 33, 0.15), /* Subtle Brand Glow */
+      0 0 0 1px rgba(0,0,0,0.02); /* Crisp border */
+      
+    /* Light mode overlay needs to be darker at bottom for white text readability */
+    --overlay-gradient: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.2) 60%, transparent 100%);
   }
 
   body {
-    background-color: var(--background);
-    color: var(--foreground);
-    /* Improved gradient syntax for v4 */
-    background-image: linear-gradient(
-      to bottom,
-      var(--color-ebs-dark),
-      #1e002b
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), color 0.4s ease;
+    
+    /* 
+       GLOBAL BACKGROUND GRADIENT
+       Adds a very subtle ambient light to the top-left of the screen in both modes 
+    */
+    background-image: radial-gradient(
+      circle at 0% 0%, 
+      var(--brand-primary) 0%, 
+      transparent 25%
     );
-    min-height: 100vh;
-    overflow-x: hidden;
+    background-attachment: fixed; /* Keeps gradient pinned */
+    background-size: 100% 100%;
+  }
+  
+  /* Fix opacity of the background gradient */
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* Extremely subtle wash */
+    background: inherit;
+    opacity: 0.03; 
+    pointer-events: none;
+    z-index: -1;
   }
 }
 
-/* Utilities */
+@theme {
+  --color-ebs-dark: var(--bg-main);
+  --color-ebs-charcoal: var(--bg-card);
+  --color-ebs-crimson: var(--brand-primary);
+  --color-foreground: var(--text-main);
+  --color-muted: var(--text-muted);
+  --color-border: var(--border-color);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui;
+  --font-heading: var(--font-playfair), serif;
+  
+  --shadow-premium: var(--shadow-card);
+  --bg-overlay: var(--overlay-gradient);
+}
+
 @utility no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
   &::-webkit-scrollbar {
     display: none;
   }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
 }

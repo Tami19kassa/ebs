@@ -12,7 +12,6 @@ interface HeroSectionProps {
   featured: MediaItem;
 }
 
-// Utility to get YouTube ID (Shorts & Normal)
 const getYouTubeId = (url: string) => {
   if (!url) return null;
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|shorts\/)([^#&?]*).*/;
@@ -57,16 +56,14 @@ export const HeroSection = ({ featured }: HeroSectionProps) => {
   };
 
   return (
-    // Changed h-[95vh] to h-screen for full immersion on mobile
-    <div ref={ref} className="relative h-screen md:h-[95vh] w-full overflow-hidden bg-ebs-dark">
+    // FIX: Hardcoded 'bg-[#0a0a0a]' ensures the video area is always dark
+    <div ref={ref} className="relative h-screen md:h-[95vh] w-full overflow-hidden bg-[#0a0a0a]">
       
-      {/* BACKGROUND LAYER */}
       <motion.div
         style={{ y: backgroundY, opacity: backgroundOpacity }}
         className="absolute inset-0 z-0"
       >
         {youtubeId ? (
-          // FIX IS HERE: scale-[3.5] on mobile fills the vertical height
           <div className="absolute inset-0 w-full h-full pointer-events-none scale-[3.5] md:scale-125">
             <iframe
               src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${youtubeId}&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1&disablekb=1`}
@@ -83,12 +80,19 @@ export const HeroSection = ({ featured }: HeroSectionProps) => {
           />
         )}
 
-        {/* Adjusted Gradients to be less aggressive at the top */}
-        <div className="absolute inset-0 z-10 bg-gradient-to-r from-ebs-dark via-ebs-dark/20 to-transparent" />
-        <div className="absolute inset-0 z-10 bg-gradient-to-t from-ebs-dark via-ebs-dark/10 to-transparent" />
+        {/* Gradient fades to BLACK on the sides/top to blend video */}
+        <div className="absolute inset-0 z-10 bg-gradient-to-r from-black via-black/20 to-transparent" />
+        <div className="absolute inset-0 z-10 bg-gradient-to-t from-black via-black/10 to-transparent" />
+        
+        {/* 
+           MAGIC GRADIENT:
+           This gradient sits at the very bottom.
+           It fades from Transparent -> THEME COLOR (White in Light Mode, Black in Dark Mode).
+           This ensures the video doesn't just "cut off" harshly.
+        */}
+        <div className="absolute bottom-0 left-0 right-0 h-32 z-20 bg-gradient-to-t from-[var(--bg-main)] to-transparent" />
       </motion.div>
 
-      {/* CONTENT LAYER */}
       <div className="relative z-20 flex h-full max-w-7xl mx-auto flex-col justify-end pb-32 md:pb-24 px-6 md:px-12">
         <motion.div
           variants={containerVariants}
@@ -97,9 +101,10 @@ export const HeroSection = ({ featured }: HeroSectionProps) => {
           className="max-w-3xl space-y-4 md:space-y-6"
         >
           <motion.div variants={textVariants} className="flex items-center gap-3">
-             <span className="bg-ebs-crimson text-white px-3 py-1 text-[10px] md:text-xs font-bold tracking-widest uppercase rounded-sm shadow-[0_0_15px_rgba(214,44,44,0.5)]">
+             <span className="bg-ebs-crimson text-white px-3 py-1 text-[10px] md:text-xs font-bold tracking-widest uppercase rounded-sm shadow-[0_0_15px_rgba(243,112,33,0.5)]">
                New Premiere
              </span>
+             {/* FIX: Force text-gray-300 so it is readable on dark video */}
              <div className="flex items-center gap-2 text-gray-300 font-medium text-xs md:text-sm tracking-wide">
                 <span>{featured.year}</span>
                 <span className="text-ebs-crimson">•</span>
@@ -107,6 +112,7 @@ export const HeroSection = ({ featured }: HeroSectionProps) => {
              </div>
           </motion.div>
 
+          {/* FIX: Force text-white */}
           <motion.h1
             variants={textVariants}
             className="font-heading text-5xl md:text-7xl lg:text-8xl font-black text-white leading-[0.9] tracking-tight drop-shadow-2xl"
@@ -114,6 +120,7 @@ export const HeroSection = ({ featured }: HeroSectionProps) => {
             {featured.title}
           </motion.h1>
 
+          {/* FIX: Force text-gray-200 */}
           <motion.p
             variants={textVariants}
             className="text-sm md:text-xl text-gray-200 line-clamp-3 max-w-2xl leading-relaxed text-shadow-sm"
@@ -125,7 +132,7 @@ export const HeroSection = ({ featured }: HeroSectionProps) => {
             <Link href={`/watch/${featured.id}`}>
               <Button 
                 variant="primary" 
-                className="h-12 md:h-14 px-6 md:px-8 text-base md:text-lg hover:shadow-[0_0_20px_rgba(214,44,44,0.4)] transition-shadow"
+                className="h-12 md:h-14 px-6 md:px-8 text-base md:text-lg hover:shadow-[0_0_20px_rgba(243,112,33,0.4)] transition-shadow"
               >
                 <Play className="mr-2 h-5 w-5 fill-current" />
                 Play with Sound
@@ -135,7 +142,7 @@ export const HeroSection = ({ featured }: HeroSectionProps) => {
             <Button
               variant="secondary"
               onClick={handleListToggle}
-              className="h-12 md:h-14 px-6 md:px-8 text-base md:text-lg group bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/20"
+              className="h-12 md:h-14 px-6 md:px-8 text-base md:text-lg group bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/20 text-white"
             >
               {isListed ? (
                 <Check className="mr-2 h-5 w-5 text-green-400" />
